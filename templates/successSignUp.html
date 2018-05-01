@@ -1,0 +1,177 @@
+<html>
+<head>
+  <meta charset='utf-8'/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link href="{{ url_for('static', filename='fullcalendar.min.css') }}" rel='stylesheet' />
+  <link href="{{ url_for('static', filename='fullcalendar.print.css') }}" rel='stylesheet' media='print' />
+  <link rel='stylesheet' type='text/css' href='static/js/fullcalendar.css' />
+  <script src="{{ url_for('static', filename='lib/moment.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='lib/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='fullcalendar.min.js') }}"></script>
+  <script type='text/javascript' src='static/js/lib/jquery.min.js'></script>
+  <script type='text/javascript' src='static/js/lib/moment.min.js'></script>
+  <script type='text/javascript' src='static/js/fullcalendar.js'></script>
+
+  <script type='text/javascript' src='static/gcal.js'></script>
+
+  <script type='text/javascript'>
+  if (jsEvent.target.id === 'Delete') {
+    alert("Clicked: "+ event.title);
+      // $("#calendarModal").modal();
+    }
+  </script>
+
+  <script type='text/javascript'>
+
+  	$(document).ready(function() {
+  		$('#calendar').fullCalendar({
+        googleCalendarApiKey: 'AIzaSyAlZF_8cQrCfidjMgqJIKYx7e46Vg9eJSY',
+        header: {
+  				left: 'prev,next today',
+  				center: 'title',
+  				right: 'listWeek, month,agendaWeek,agendaDay'
+  			},
+        defaultView: 'listWeek',
+  			editable: true,
+  			eventLimit: true, // allow "more" link when too many events
+  			events: {
+          googleCalendarId: 'drew.edu_f72q9q390fr76cj235bml2220c@group.calendar.google.com',
+          className: 'gcal-event',
+        eventClick: function(event, jsEvent, view){
+          if (event.url) {
+              alert("hello")
+            // if (jsEvent.target.id === 'Delete') {
+            //   alert("Clicked: "+ event.title);
+            //     // $("#calendarModal").modal();
+            //   }
+            // return false;
+          }
+        }
+
+  			// 	error: function() {
+  			// 		$('#script-warning').show();
+  			// 	}
+  			// },
+  			// loading: function(bool) {
+  			// 	$('#loading').toggle(bool);
+      },
+
+            // alert("clicked on delete"+ event.start);
+            // $("#calendarModal").modal(); // Maybe show a modal dialog asking the user if he wants to delete the event.
+
+
+
+        eventRender: function(event, element) {
+          element.html("Event Title: "+event.title+'<a class="btn btn-success btn-sm pull-right"><span class="primary glyphicon glyphicon-ok pull-right" id="Delete" data-toggle="modal" data-target="#myModal"> Sign Up</span></a>'+"<br>"+"ID: "+event.id);
+        }
+  		});
+
+  	});
+  </script>
+  <script>
+
+  </script>
+  <style>
+
+  	body {
+  		margin: 0;
+  		padding: 0;
+  		font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+  		font-size: 14px;
+  	}
+
+  	#script-warning {
+  		display: none;
+  		background: #eee;
+  		border-bottom: 1px solid #ddd;
+  		padding: 0 10px;
+  		line-height: 40px;
+  		text-align: center;
+  		font-weight: bold;
+  		font-size: 12px;
+  		color: red;
+  	}
+
+  	#loading {
+  		display: none;
+  		position: absolute;
+  		top: 10px;
+  		right: 10px;
+  	}
+
+  	#calendar {
+  		max-width: 900px;
+  		margin: 40px auto;
+  		padding: 0 10px;
+  	}
+    #login{
+      text-decoration:none;
+      color:white;
+      text-align: right;
+      padding-top: 5px;
+      /*padding-left: 10px;*/
+    }
+    #nav{
+      padding-right: 50px;
+    }
+    #allRight{
+      padding-top: 10px;
+    }
+    #h3{
+      color: black;
+    }
+    #dropdown{
+      padding-right: 20px;
+    }
+    p{
+      padding-left: 100px;
+      padding-right: 100px;
+    }
+    #studentBorder{
+      width: 90%;
+      height: 20%;
+    }
+    #displayIfUser{
+      display: none;
+    }
+    #formForNewUsers{
+      display:none;
+    }
+</style>
+</head>
+<body>
+  <nav class="navbar navbar-inverse bg-inverse" id="nav">
+    <a class="navbar-brand" id="header" href="/dashboard">FacilitiesScheduling</a>
+    <!-- <div id="allRight"> -->
+    <ul class="nav navbar-nav navbar-right" id="login" >
+      <button class="btn btn-danger"><a href="/identity/logout" id="login">Log Out</a></button>
+    </ul>
+    <!-- <div id="dialog" title="Basic dialog">
+      <p>This is the default dialog which is useful for displaying information. The dialog window can be moved, resized and closed with the 'x' icon.</p>
+    </div> -->
+  </nav>
+  <div class="container" id="studentBorder">
+    <div class="row">
+        <div class="col-xs-12 col-sm-6 col-md-3">
+            <div class="well well-md">
+                <div class="row">
+                    <div class="col-sm-6 col-md-12">
+                        <center><img src="{{userinfo['picture']}}" alt="" class="img-rounded img-responsive"/><center>
+                    </div>
+                    <div class="col-sm-6 col-md-12">
+                        <center><h3>{{userinfo['name']}}</h3></center>
+                        <center><i class="glyphicon glyphicon-envelope"></i> {{userinfo['email']}}</center>
+                      <center><i class= "glyphicon glyphicon-ok"></i> Student </center>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h1>Successfully signed up!</h1>
+    </div>
+
+    </div>
+
+</body>
+</html>
