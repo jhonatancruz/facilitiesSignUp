@@ -6,12 +6,21 @@ import requests
 import psycopg2
 import os
 from apiclient.discovery import build
+import googleapiclient.discovery
 from httplib2 import Http
 from oauth2client import file, client, tools
 import datetime
+import flask
 
-app=Flask(__name__)
+app=flask.Flask(__name__)
 app.secret_key = 'Random value' #TODO: Replace this secret key with an actual secure secret key.
+
+CLIENT_SECRETS_FILE = "client_secret.json"
+SCOPES = ['profile', 'email', 'https://www.googleapis.com/auth/calendar']
+API_SERVICE_NAME = 'calendar'
+API_VERSION = 'v3'
+
+
 
 def after_request(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -27,47 +36,54 @@ def index():
 def dashboard():
     return render_template("landingStudent.html", userinfo=userinfo)
 
-@app.route('/updateEvent',methods=["GET"])
+@app.route('/updateEvent',methods=["GET", "POST"])
 def updateEvent():
-    # SCOPES = 'https://www.googleapis.com/auth/calendar'
-    # store = file.Storage('credentials.json')
-    # creds = store.get()
-    # if not creds or creds.invalid:
-    #     flow = client.flow_from_clientsecrets('client_secret.json', SCOPES)
-    #     creds = tools.run_flow(flow, store)
-    # service = build('calendar', 'v3', http=creds.authorize(Http()))
+    if request.method== "POST":
+        #calendarid inputed through the modal
+        modalVal= request.form["modalVal"]
 
-    # http_auth = credentials.authorize(httplib2.Http())
-    # service = discovery.build('calendar', 'v3', http = http_auth)
+        if 'credentials' not in flask.session:
+            return redirect(url_for('dashboard'))
+        try:
+            # Load credentials from the session:
+            credentials = google.oauth2.credentials.Credentials(**session['credentials'])
 
-    drive = build('calendar', 'v3', credentials=credentials)
+            # Build the service object for the Google OAuth v2 API:
+            global oauth
+            oauth = build('oauth2', 'v2', credentials=credentials)
+            # Call methods on the service object to return a response with the user's info:
+            userinfo = oauth.userinfo().get().execute()
+            print(userinfo)
+        except google.auth.exceptions.RefreshError:
+            # Credentials are stale
+            return redirect(url_for('dashboard'))
 
-    # Call the Calendar API
-    # now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-    # print('Getting the upcoming 10 events')
-    # events_result = service.events().list(calendarId='drew.edu_f72q9q390fr76cj235bml2220c@group.calendar.google.com', timeMin=now,
-    #                                       maxResults=10, singleEvents=True,
-    #                                       orderBy='startTime').execute()
-    # events = events_result.get('items', [])
-    #
-    # if not events:
-    #     print('No upcoming events found.')
-    # for event in events:
-    #     start = event['start'].get('dateTime', event['start'].get('date'))
-    #     print(start, event['summary'])
+        #builds credentials necessary to have access to make edit on the calendar
+        credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
+        service = googleapiclient.discovery.build(
+          API_SERVICE_NAME, API_VERSION, credentials=credentials)
 
-    # First retrieve the event from the API.
-    event = service.events().get(calendarId='drew.edu_f72q9q390fr76cj235bml2220c@group.calendar.google.com', eventId='7mhqobed8ef99dpgp74bl57njn').execute()
-    #
-    # event['attendees'] = 'jcruz3@drew.edu'
-    event["summary"]= 'something else'
-    print(event['summary'],event["attendees"], event['id'])
+        # First retrieve the event from the API
+        event = service.events().get(calendarId='drew.edu_f72q9q390fr76cj235bml2220c@group.calendar.google.com', eventId=modalVal).execute()
 
-    updated_event = service.events().update(calendarId='drew.edu_f72q9q390fr76cj235bml2220c@group.calendar.google.com', eventId='7mhqobed8ef99dpgp74bl57njn', body=event).execute()
+        #adds the user signed in as an attendee
+        someoneElse={'email': userinfo['email'],'responseStatus': 'needsAction'}
+        otherList= event["attendees"]
+        otherList.append(someoneElse)
+        event["attendees"]= otherList
+
+        #updates the google event
+        updated_event = service.events().update(calendarId='drew.edu_f72q9q390fr76cj235bml2220c@group.calendar.google.com', eventId=modalVal, body=event).execute()
+
+        # Save credentials back to session in case access token was refreshed.
+        # ACTION ITEM: In a production app, you likely want to save these
+        #              credentials in a persistent database instead.
+        flask.session['credentials'] = credentials_to_dict(credentials)
+
+        return render_template("successSignUp.html", userinfo=userinfo)
 
 
-    print("success?")
-    return '<h1>Success</h1>'
+
 # @app.route('/data')
 # def return_data():
 #     start_date = request.args.get('start', '')
@@ -96,7 +112,9 @@ def login():
     try:
         # Load credentials from the session:
         credentials = google.oauth2.credentials.Credentials(**session['credentials'])
+
         # Build the service object for the Google OAuth v2 API:
+        global oauth
         oauth = build('oauth2', 'v2', credentials=credentials)
         # Call methods on the service object to return a response with the user's info:
         userinfo = oauth.userinfo().get().execute()
